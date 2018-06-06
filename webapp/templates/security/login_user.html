@@ -5,7 +5,7 @@
 {{ super() }}
 <div class="row-fluid">
     <div class="col-sm-8 col-sm-offset-2">
-        <h1>Login</h1>
+        <h1>登陆</h1>
         <div class="well">
             <form action="{{ url_for_security('login') }}" method="POST" name="login_user_form">
                 {{ login_user_form.hidden_tag() }}
@@ -15,7 +15,7 @@
                 {{ render_field(login_user_form.next) }}
                 {{ render_field(login_user_form.submit, class="btn btn-primary") }}
             </form>
-            <p>Not yet signed up? Please <a href="{{ url_for('security.register') }}">register for an account</a>.</p>
+            <p>没账号?  <a href="{{ url_for('security.register') }}">立刻注册</a>.</p>
         </div>
     </div>
 </div>
