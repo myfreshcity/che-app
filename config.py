@@ -25,4 +25,6 @@ class Config():
     SECURITY_SEND_REGISTER_EMAIL = False
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+    IMG_PATH = 'http://localhost:8000/imgs'
+
 config = Config()

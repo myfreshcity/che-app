@@ -1,3 +1,4 @@
+from flask import current_app
 from flask_security import RoleMixin, UserMixin
 
 from webapp import db
@@ -63,7 +64,7 @@ class Category(db.Model):
         json_user = {
             'id': self.id,
             'full_name': self.full_name,
-            'img_url': 'http://localhost:8000/imgs/' + self.img_url,
+            'img_url': '%s/%s' % (current_app.config['IMG_PATH'],self.img_url),
         }
         return json_user
 
@@ -98,7 +99,7 @@ class Car(db.Model):
             'location': self.location,
             'is_show': self.is_show,
             'remark': self.remark,
-            'img_url': 'http://localhost:8000/imgs/'+self.cat.img_url
+            'img_url': '%s/%s' % (current_app.config['IMG_PATH'],self.cat.img_url)
             #'mp_count': self.subscribed_mps.count()
         }
         return json_user

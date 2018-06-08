@@ -1,8 +1,11 @@
 import json
 
+from flask import current_app
+
 from webapp import db
 from webapp.models import Brand, Car, Category
 from webapp.utils import new_alchemy_encoder
+
 
 
 def get_brands():
@@ -60,14 +63,15 @@ def get_car_detail(id):
 
 def get_index():
     result = {}
+    img_path = current_app.config['IMG_PATH']
     result['swiper'] = [
         {
         'id': 1,
-        'imgPath': 'http://localhost:8000/imgs'+'/home/banner_1.jpg'
+        'imgPath': img_path +'/home/banner_1.jpg'
         },
         {
             'id': 2,
-            'imgPath': 'http://localhost:8000/imgs'+'/home/banner_2.jpg'
+            'imgPath': img_path+'/home/banner_2.jpg'
 
         }]
 
@@ -75,13 +79,13 @@ def get_index():
         'list':[
         {
             'id': 32040,
-            'imgPath': 'http://localhost:8000/imgs' + '/home/400×400.jpg'
+            'imgPath': img_path + '/home/400×400.jpg'
         },
         {
             'id': 32041,
-            'imgPath': 'http://localhost:8000/imgs' + '/home/400×400_2.jpg'
+            'imgPath': img_path + '/home/400×400_2.jpg'
         }],
-        'banner':'http://localhost:8000/imgs'+'/home/400×100_1.jpg'
+        'banner':img_path+'/home/400×100_1.jpg'
     }
 
     result['section1'] = section1
