@@ -1,18 +1,20 @@
 import flask_admin
-from flask import Flask, url_for, redirect, render_template, request, abort
+from flask import Flask, url_for, redirect, render_template, request, abort, jsonify
 from flask_admin import helpers as admin_helpers
 from flask_admin.contrib import sqla
 from flask_babelex import Babel
 from flask_security import Security, SQLAlchemyUserDatastore, \
     current_user
-from flask_sqlalchemy import SQLAlchemy
 
 # Create Flask application
 from config import config
+from webapp import db
+from webapp.services import get_brands, get_car_detail
 
 app = Flask(__name__)
 app.config.from_object(config)
-db = SQLAlchemy(app)
+
+db.init_app(app)
 
 babel = Babel(app)
 app.config['BABEL_DEFAULT_LOCALE'] = 'zh_CN'
@@ -51,6 +53,7 @@ class MyModelView(sqla.ModelView):
                 return redirect(url_for('security.login', next=request.url))
 
 class MyModelViewUser(MyModelView):
+    can_create = False
     # column_select_related_list = ['mps',]
     column_formatters = dict(
         password=lambda v, c, m, p: '**' + m.password[-6:],
@@ -72,17 +75,16 @@ class MyModelViewCar(MyModelView):
         is_show=u'是否上架',
         full_name=u'名称',
         guid_price=u'指导价',
-        price=u'出售价',
-        deposit=u'订金',
+        price=u'定金',
+        offset_price=u'降价',
         location=u'车源所在地',
         remark=u'备注',
     )
     column_searchable_list = (Car.full_name,)
 
-# Flask views
-@app.route('/')
-def index():
-    return render_template('index.html')
+    column_exclude_list = (
+        'brand','cat'
+    )
 
 # Create admin
 admin = flask_admin.Admin(
@@ -109,5 +111,21 @@ def security_context_processor():
         h=admin_helpers,
         get_url=url_for
     )
+
+# Flask views
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/api/category',methods=['POST','GET'])
+def brands():
+    return jsonify(get_brands())
+
+@app.route('/api/detail',methods=['POST','GET'])
+def car_detail():
+    id = request.json['cid']
+    return jsonify(get_car_detail(int(id)))
+
+
 
 

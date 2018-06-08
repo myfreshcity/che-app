@@ -1,6 +1,6 @@
 from flask_security import RoleMixin, UserMixin
 
-from webapp.app import db
+from webapp import db
 
 roles_users = db.Table('roles_users',
                        db.Column('user_id', db.Integer(), db.ForeignKey('users.id')),
@@ -35,36 +35,73 @@ class User(UserMixin, db.Model):
 
 
 class Brand(db.Model):
-    __tablename__ = 't_brand'
+    __tablename__ = 'car_brands'
     id = db.Column(db.Integer(), primary_key=True)
     initial = db.Column(db.VARCHAR(50))
     full_name = db.Column(db.VARCHAR(255))
     img_address = db.Column(db.VARCHAR(255))
 
+    def to_json(self):
+        json_user = {
+            'id': self.id,
+            'full_name': self.full_name,
+        }
+        return json_user
+
     def __repr__(self):
-        return "<Brand %s>"%self.id
+        return "%s" % self.id
 
 
 class Category(db.Model):
     __tablename__ = 'car_categorys'
     id = db.Column(db.Integer(), primary_key=True)
+    brand_id = db.Column(db.Integer, db.ForeignKey('car_brands.id'))
     full_name = db.Column(db.VARCHAR(255))
     img_url = db.Column(db.VARCHAR(255))
 
+    def to_json(self):
+        json_user = {
+            'id': self.id,
+            'full_name': self.full_name,
+            'img_url': 'http://localhost:8000/imgs/' + self.img_url,
+        }
+        return json_user
+
     def __repr__(self):
-        return "<Category %s>" % self.id
+        return "%s" % self.id
 
 
 class Car(db.Model):
     __tablename__ = 'cars'
     id = db.Column(db.Integer(), primary_key=True)
+    brand_id = db.Column(db.Integer, db.ForeignKey('car_brands.id'))
+    cat_id = db.Column(db.Integer, db.ForeignKey('car_categorys.id'))
+
     full_name = db.Column(db.VARCHAR(255))
     guid_price = db.Column(db.VARCHAR(50))
     price = db.Column(db.VARCHAR(50))
-    deposit = db.Column(db.Integer())
+    offset_price = db.Column(db.Integer())
     location = db.Column(db.VARCHAR(50))
     is_show = db.Column(db.Boolean())
     remark = db.Column(db.VARCHAR(500))
+
+    brand = db.relationship("Brand")
+    cat = db.relationship("Category")
+
+    def to_json(self):
+        json_user = {
+            'id': self.id,
+            'title': self.full_name,
+            'guid_price': self.guid_price,
+            'offset_price':self.offset_price,
+            'price': self.price,
+            'location': self.location,
+            'is_show': self.is_show,
+            'remark': self.remark,
+            'img_url': 'http://localhost:8000/imgs/'+self.cat.img_url
+            #'mp_count': self.subscribed_mps.count()
+        }
+        return json_user
 
     def __repr__(self):
         return "<Car %s>" % self.id
