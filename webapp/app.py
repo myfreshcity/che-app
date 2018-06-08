@@ -9,7 +9,7 @@ from flask_security import Security, SQLAlchemyUserDatastore, \
 # Create Flask application
 from config import config
 from webapp import db
-from webapp.services import get_brands, get_car_detail
+from webapp.services import get_brands, get_car_detail, get_index
 
 app = Flask(__name__)
 app.config.from_object(config)
@@ -116,6 +116,11 @@ def security_context_processor():
 @app.route('/')
 def index():
     return render_template('index.html')
+
+
+@app.route('/api/index',methods=['POST','GET'])
+def home_index():
+    return jsonify(get_index())
 
 @app.route('/api/category',methods=['POST','GET'])
 def brands():

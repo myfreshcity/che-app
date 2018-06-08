@@ -57,3 +57,33 @@ def get_car_detail(id):
         'size':'2016款'
     }]
     return {'status': 200, 'message': '', 'car': result}
+
+def get_index():
+    result = {}
+    result['swiper'] = [
+        {
+        'id': 1,
+        'imgPath': 'http://localhost:8000/imgs'+'/home/banner_1.jpg'
+        },
+        {
+            'id': 2,
+            'imgPath': 'http://localhost:8000/imgs'+'/home/banner_2.jpg'
+
+        }]
+
+    section1 = {
+        'list':[
+        {
+            'id': 32040,
+            'imgPath': 'http://localhost:8000/imgs' + '/home/400×400.jpg'
+        },
+        {
+            'id': 32041,
+            'imgPath': 'http://localhost:8000/imgs' + '/home/400×400_2.jpg'
+        }],
+        'banner':'http://localhost:8000/imgs'+'/home/400×100_1.jpg'
+    }
+
+    result['section1'] = section1
+
+    return {'status': 200, 'message': '', 'result': result}
