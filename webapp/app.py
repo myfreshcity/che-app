@@ -4,9 +4,11 @@ from flask_admin import helpers as admin_helpers
 from flask_admin.contrib import sqla
 from flask_babelex import Babel
 from flask_security import Security, SQLAlchemyUserDatastore, \
-    current_user
+    current_user, logout_user, login_user
 
 # Create Flask application
+from flask_security.utils import verify_password, hash_password
+
 from config import config
 from webapp import db
 from webapp.services import get_brands, get_car_detail, get_index
@@ -30,6 +32,7 @@ security = Security(app, user_datastore)
 
 # Create customized model view class
 class MyModelView(sqla.ModelView):
+    can_delete = False
 
     def is_accessible(self):
         if not current_user.is_active or not current_user.is_authenticated:
@@ -130,6 +133,42 @@ def brands():
 def car_detail():
     id = request.json['cid']
     return jsonify(get_car_detail(int(id)))
+
+@app.route('/api/login', methods=['POST', 'GET'])
+def login():
+    if not current_user.is_anonymous:
+        logout_user()
+    username = request.json['username']
+    password = request.json['password']
+
+    user = User.query.filter_by(email=username).first()
+    if user is None:
+        return jsonify({'status': 500, 'message': '无效的用户名'})
+    if not verify_password(password, user.password):
+        return jsonify({'status': 500, 'message': '无效的密码'})
+    login_user(user, remember=True)
+    return jsonify({'status': 200, 'message': ''})
+
+@app.route('/api/logout',methods=['POST','GET'])
+def logout():
+    logout_user()
+    return jsonify({'status': 200, 'message': ''})
+
+@app.route('/api/register', methods=['GET', 'POST'])
+def register():
+    username = request.json['username']
+    password = request.json['password']
+
+    user = User.query.filter_by(email=username).first()
+    if user:
+        return jsonify({'status': 500, 'message': '用户名已存在'})
+    new_user = user_datastore.create_user(email=username, password=hash_password(password))
+    normal_role = user_datastore.find_role('user')
+    db.session.add(new_user)
+    db.session.commit()
+    user_datastore.add_role_to_user(new_user, normal_role)
+    login_user(new_user)
+    return jsonify({'status': 200, 'message': ''})
 
 
 
