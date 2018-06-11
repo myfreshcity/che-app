@@ -1,3 +1,5 @@
+import datetime
+
 import flask_admin
 import time
 from flask import Flask, url_for, redirect, render_template, request, abort, jsonify, current_app, make_response, \
@@ -13,7 +15,7 @@ from flask_security.utils import verify_password, hash_password
 
 from config import config
 from webapp import db
-from webapp.services import get_brands, get_car_detail, get_index, get_openid
+from webapp.services import get_brands, get_car_detail, get_index, get_openid, create_order
 from webapp.wxpay import get_nonce_str, WxPay, xml_to_dict, dict_to_xml
 
 app = Flask(__name__)
@@ -24,7 +26,7 @@ db.init_app(app)
 babel = Babel(app)
 app.config['BABEL_DEFAULT_LOCALE'] = 'zh_CN'
 
-from webapp.models import Role, User, Car
+from webapp.models import Role, User, Car, Order
 
 # Define models
 
@@ -185,22 +187,43 @@ def get_wx_openid(code):
     else:
         return abort(500)
 
+@app.route('/api/wxpay/prepay', methods=['POST'])
+def init_pay():
+    pay_form = request.json['pay_form']
+    car_list = request.json['car_list']
+    total_fee = int(request.json['total_fee'])
+    order = create_order(pay_form,car_list,total_fee)
+    if order:
+        return jsonify({'status': 200, 'message': '', 'result': order.to_json()})
+    else:
+        return abort(500)
+
 @app.route('/api/wxpay/pay', methods=['POST'])
 def create_pay():
     '''
     请求支付
     :return:
     '''
-    total_fee = request.json['total_fee']
+    order_id = request.json['order_id']
     openid = request.json['openid']
+
+    order = db.session.query(Order).filter(Order.id == order_id).first()
+    order.open_id = openid
+    order.t_status = 10
+    if current_app.config['TEST_ENV']:
+        total_fee = 1
+    else:
+        total_fee = order.pay_amt*100
+        order.pay_amt = total_fee
+
 
     data = {
         'appid': current_app.config['APP_ID'],
         'mch_id': current_app.config['MCH_ID'],
         'nonce_str': get_nonce_str(),
         'body': '商品描述',                              # 商品描述
-        'out_trade_no': str(int(time.time())),       # 商户订单号
-        'total_fee': 1,
+        'out_trade_no': str(order.id),       # 商户订单号
+        'total_fee': total_fee,
         'spbill_create_ip': current_app.config['SPBILL_CREATE_IP'],
         'notify_url': current_app.config['NOTIFY_URL'],
         'attach': '{"msg": "自定义数据"}',
@@ -211,6 +234,7 @@ def create_pay():
     wxpay = WxPay(current_app.config['MERCHANT_KEY'], **data)
     pay_info = wxpay.get_pay_info()
     if pay_info:
+        db.session.commit()
         return jsonify({'status': 200, 'message': '','result':pay_info})
     return jsonify({'status': 500, 'message': '请求支付失败'})
 
@@ -222,7 +246,12 @@ def wxpay():
     :return:
     '''
     if request.method == 'POST':
-        app.logger.info(xml_to_dict(request.data))
+        req_data = xml_to_dict(request.data)
+        order = db.session.query(Order).filter(Order.id == req_data['out_trade_no']).first()
+        order.t_status = 20
+        order.pay_confirm_time = datetime.datetime.now()
+        db.session.commit()
+
         result_data = {
             'return_code': 'SUCCESS',
             'return_msg': 'OK'

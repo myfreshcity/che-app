@@ -1,5 +1,6 @@
 from flask import current_app
 from flask_security import RoleMixin, UserMixin
+from sqlalchemy import func
 
 from webapp import db
 
@@ -34,6 +35,46 @@ class User(UserMixin, db.Model):
     roles = db.relationship('Role', secondary=roles_users,
                             backref=db.backref('users'))  # , lazy='dynamic'))
 
+orders_cars = db.Table('orders_cars',
+                       db.Column('order_id', db.Integer(), db.ForeignKey('orders.id')),
+                       db.Column('car_id', db.Integer(), db.ForeignKey('cars.id')))
+
+
+class Order(db.Model):
+    __tablename__ = 'orders'
+    id = db.Column(db.Integer(), primary_key=True)
+    user_id = db.Column(db.Integer(), db.ForeignKey('users.id'))
+    open_id = db.Column(db.String(50))
+
+    pay_amt = db.Column(db.Integer())
+    t_status = db.Column(db.Integer())
+    pay_confirm_time = db.Column(db.DateTime)
+
+    pay_person_type = db.Column(db.Integer())
+    contact_way = db.Column(db.String(255))
+    contact_person = db.Column(db.String(255))
+    remark = db.Column(db.String(255))
+    created_time = db.Column(db.DateTime, server_default=func.now())
+
+    cars = db.relationship('Car', secondary=orders_cars,
+                            backref=db.backref('orders'))  # , lazy='dynamic'))
+
+    def to_json(self):
+        obj = {
+            'id': self.id,
+            'pay_amt': self.pay_amt,
+            't_status': self.t_status,
+            'pay_person_type': self.pay_person_type,
+            'contact_way': self.contact_way,
+            'contact_person': self.contact_person,
+            'remark': self.remark,
+        }
+        return obj
+
+    def __repr__(self):
+        return '<Order %s>' % self.id
+
+
 
 class Brand(db.Model):
     __tablename__ = 'car_brands'
@@ -50,7 +91,7 @@ class Brand(db.Model):
         return json_user
 
     def __repr__(self):
-        return "%s" % self.id
+        return "%s" % self.full_name
 
 
 class Category(db.Model):
@@ -69,7 +110,7 @@ class Category(db.Model):
         return json_user
 
     def __repr__(self):
-        return "%s" % self.id
+        return "%s" % self.full_name
 
 
 class Car(db.Model):

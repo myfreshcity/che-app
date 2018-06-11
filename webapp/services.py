@@ -6,7 +6,7 @@ import requests
 from flask import current_app
 
 from webapp import db
-from webapp.models import Brand, Car, Category
+from webapp.models import Brand, Car, Category, Order
 from webapp.utils import new_alchemy_encoder
 
 def get_brands():
@@ -108,3 +108,23 @@ def get_openid(code):
     except Exception as e:
         logging.error(e)
         return False
+
+def create_order(pay_form,car_list,amount):
+    order = Order()
+    order.pay_person_type = 0 if pay_form['user_type'] else 1
+    order.contact_person = pay_form['user_name']
+    order.contact_way = pay_form['contact']
+    order.remark = pay_form['t_remark']
+    order.t_status = 0
+    order.pay_amt = amount
+
+    cars = []
+    for c in car_list:
+        car = db.session.query(Car).filter(Car.id == c['id']).first()
+        cars.append(car)
+    order.cars = cars
+
+    db.session.add(order)
+    db.session.commit()
+    return order
+

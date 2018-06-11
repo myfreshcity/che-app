@@ -37,4 +37,6 @@ class Config():
     TRADE_TYPE = 'JSAPI'  # 交易类型
     MERCHANT_KEY = '87c7653ef2e2669488d4c766a212b205'  # 商户KEY
 
+    TEST_ENV = True
+
 config = Config()
