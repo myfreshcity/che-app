@@ -1,12 +1,13 @@
 import json
 
+import logging
+
+import requests
 from flask import current_app
 
 from webapp import db
 from webapp.models import Brand, Car, Category
 from webapp.utils import new_alchemy_encoder
-
-
 
 def get_brands():
     list = db.session.query(Car, Category, Brand).filter(
@@ -89,5 +90,21 @@ def get_index():
     }
 
     result['section1'] = section1
-
     return {'status': 200, 'message': '', 'result': result}
+
+def get_openid(code):
+    url = 'https://api.weixin.qq.com/sns/jscode2session'
+    try:
+        params = {
+            'appid': current_app.config['APP_ID'],
+            'secret': current_app.config['APP_KEY'],
+            'js_code': code,
+            'grant_type': 'authorization_code'
+        }
+
+        result = requests.post(url, params=params)
+        result.encoding = 'utf-8'
+        return result.json()
+    except Exception as e:
+        logging.error(e)
+        return False

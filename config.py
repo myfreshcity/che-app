@@ -25,6 +25,16 @@ class Config():
     SECURITY_SEND_REGISTER_EMAIL = False
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    IMG_PATH = 'http://localhost:8000/imgs'
+    IMG_PATH = 'https://carshop.manmanh.com/imgs'
+
+    # weixin config
+
+    APP_ID = 'wx286dca7ab8e2b933'  # 小程序ID
+    APP_KEY = '9e0e06a06469d0fe9b6fc185724aadf1'  # 小程序ID
+    MCH_ID = '1481660592'  # 商户号
+    SPBILL_CREATE_IP = '111.111.111.11'  # 终端IP
+    NOTIFY_URL = 'https://carshop.manmanh.com/api/wxpay/notify'  # 通知地址
+    TRADE_TYPE = 'JSAPI'  # 交易类型
+    MERCHANT_KEY = '87c7653ef2e2669488d4c766a212b205'  # 商户KEY
 
 config = Config()

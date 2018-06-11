@@ -1,5 +1,7 @@
 import flask_admin
-from flask import Flask, url_for, redirect, render_template, request, abort, jsonify
+import time
+from flask import Flask, url_for, redirect, render_template, request, abort, jsonify, current_app, make_response, \
+    session
 from flask_admin import helpers as admin_helpers
 from flask_admin.contrib import sqla
 from flask_babelex import Babel
@@ -11,7 +13,8 @@ from flask_security.utils import verify_password, hash_password
 
 from config import config
 from webapp import db
-from webapp.services import get_brands, get_car_detail, get_index
+from webapp.services import get_brands, get_car_detail, get_index, get_openid
+from webapp.wxpay import get_nonce_str, WxPay, xml_to_dict, dict_to_xml
 
 app = Flask(__name__)
 app.config.from_object(config)
@@ -171,5 +174,58 @@ def register():
     return jsonify({'status': 200, 'message': ''})
 
 
+@app.route('/api/wx/openid/<code>')
+def get_wx_openid(code):
+    result = get_openid(code)
+    if result:
+        resp = make_response(jsonify({'status': 200, 'message': '', 'result': result}))
+        resp.headers['openid'] = result['openid']
+        session['openid'] = result['openid']
+        return resp
+    else:
+        return abort(500)
 
+@app.route('/api/wxpay/pay', methods=['POST'])
+def create_pay():
+    '''
+    请求支付
+    :return:
+    '''
+    total_fee = request.json['total_fee']
+    openid = request.json['openid']
+
+    data = {
+        'appid': current_app.config['APP_ID'],
+        'mch_id': current_app.config['MCH_ID'],
+        'nonce_str': get_nonce_str(),
+        'body': '商品描述',                              # 商品描述
+        'out_trade_no': str(int(time.time())),       # 商户订单号
+        'total_fee': 1,
+        'spbill_create_ip': current_app.config['SPBILL_CREATE_IP'],
+        'notify_url': current_app.config['NOTIFY_URL'],
+        'attach': '{"msg": "自定义数据"}',
+        'trade_type': current_app.config['TRADE_TYPE'],
+        'openid': openid
+    }
+
+    wxpay = WxPay(current_app.config['MERCHANT_KEY'], **data)
+    pay_info = wxpay.get_pay_info()
+    if pay_info:
+        return jsonify({'status': 200, 'message': '','result':pay_info})
+    return jsonify({'status': 500, 'message': '请求支付失败'})
+
+
+@app.route('/api/wxpay/notify', methods=['POST'])
+def wxpay():
+    '''
+    支付回调通知
+    :return:
+    '''
+    if request.method == 'POST':
+        app.logger.info(xml_to_dict(request.data))
+        result_data = {
+            'return_code': 'SUCCESS',
+            'return_msg': 'OK'
+        }
+        return dict_to_xml(result_data), {'Content-Type': 'application/xml'}
 
