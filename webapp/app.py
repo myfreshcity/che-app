@@ -148,8 +148,12 @@ def index():
 
 @app.route('/api/index',methods=['POST','GET'])
 def home_index():
-    openid = request.json['oid']
-    session['openid'] = openid
+    try:
+        openid = request.json['oid']
+        session['openid'] = openid
+    except Exception:
+        app.logger.error('user weixin login fail...')
+
     return jsonify(get_index())
 
 @app.route('/api/category',methods=['POST','GET'])
