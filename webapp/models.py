@@ -24,6 +24,7 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(255), unique=True)
     username = db.Column(db.String(64), unique=True, index=True)
+    openid = db.Column(db.String(50), unique=True, index=True)
     password = db.Column(db.String(255))
     active = db.Column(db.Boolean())
     confirmed_at = db.Column(db.DateTime())
@@ -68,6 +69,7 @@ class Order(db.Model):
             'contact_way': self.contact_way,
             'contact_person': self.contact_person,
             'remark': self.remark,
+            'pay_time': self.pay_confirm_time.strftime('%Y-%m-%d %H:%M:%S') if self.pay_confirm_time else '-'
         }
         return obj
 

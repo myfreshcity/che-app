@@ -94,6 +94,25 @@ class MyModelViewCar(MyModelView):
         'brand','cat'
     )
 
+class MyModelViewOrder(MyModelView):
+    can_create = False
+    can_edit = False
+
+    column_labels = dict(
+        pay_amt=u'付款金额',
+        pay_person_type=u'是否个人',
+        contact_way=u'联系方式',
+        contact_person=u'联系人',
+        remark=u'备注',
+        created_time=u'创建时间'
+    )
+
+    column_searchable_list = (Order.contact_way,)
+
+    column_exclude_list = (
+        'open_id','pay_confirm_time','t_status'
+    )
+
 # Create admin
 admin = flask_admin.Admin(
     app,
@@ -108,6 +127,7 @@ admin.add_view(MyModelViewUser(User, db.session, name=u'用户'))
 #admin.add_view(MyModelViewBrand(Brand, db.session,name=u'品牌', category=u'车辆'))
 #admin.add_view(MyModelView(Category, db.session,name=u'车系', category=u'车辆'))
 admin.add_view(MyModelViewCar(Car, db.session, name=u'车型'))
+admin.add_view(MyModelViewOrder(Order, db.session, name=u'订单'))
 
 # define a context processor for merging flask-admin's template context into the
 # flask-security views.
@@ -128,6 +148,8 @@ def index():
 
 @app.route('/api/index',methods=['POST','GET'])
 def home_index():
+    openid = request.json['oid']
+    session['openid'] = openid
     return jsonify(get_index())
 
 @app.route('/api/category',methods=['POST','GET'])
@@ -163,12 +185,19 @@ def logout():
 def register():
     username = request.json['username']
     password = request.json['password']
+    openid = session['openid']
 
     user = User.query.filter_by(email=username).first()
     if user:
         return jsonify({'status': 500, 'message': '用户名已存在'})
+
+    user = User.query.filter_by(openid=openid).first()
+    if user:
+        return jsonify({'status': 500, 'message': '该账号在微信已注册'})
+
     new_user = user_datastore.create_user(email=username, password=hash_password(password))
     normal_role = user_datastore.find_role('user')
+    new_user.openid = openid
     db.session.add(new_user)
     db.session.commit()
     user_datastore.add_role_to_user(new_user, normal_role)
@@ -186,6 +215,19 @@ def get_wx_openid(code):
         return resp
     else:
         return abort(500)
+
+@app.route('/api/orders', methods=['GET'])
+def orders():
+    if not current_user.is_anonymous:
+        openid = current_user.openid
+    else:
+        return abort(403)
+
+    orders = Order.query.filter_by(open_id=openid).all()
+    result = []
+    for od in orders:
+        result.append(od.to_json())
+    return jsonify({'status': 200, 'message': '', 'result': result})
 
 @app.route('/api/wxpay/prepay', methods=['POST'])
 def init_pay():
