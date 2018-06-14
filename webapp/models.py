@@ -148,6 +148,6 @@ class Car(db.Model):
         return json_user
 
     def __repr__(self):
-        return "<Car %s>" % self.id
+        return "<%s>" % self.full_name
 
 
