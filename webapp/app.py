@@ -14,7 +14,9 @@ from wtforms import StringField, PasswordField
 
 from config import config
 from webapp import db
-from webapp.model_views import MyModelViewUser, MyModelViewCar, MyModelViewOrder, MyView, MyModelViewBasicCar
+from webapp.mviews.car import MyModelViewBasicCar, MyModelViewCar
+from webapp.mviews.order import MyModelViewOrder
+from webapp.mviews.user import MyModelViewUser
 from webapp.services import get_brands, get_car_detail, get_index, get_openid, create_order
 from webapp.wxpay import get_nonce_str, WxPay, xml_to_dict, dict_to_xml
 
