@@ -120,6 +120,48 @@ class Car(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
     brand_id = db.Column(db.Integer, db.ForeignKey('car_brands.id'))
     cat_id = db.Column(db.Integer, db.ForeignKey('car_categorys.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    user_name = db.Column(db.VARCHAR(255))
+    basic_car_id = db.Column(db.Integer, db.ForeignKey('basic_cars.id'))
+
+    full_name = db.Column(db.VARCHAR(255))
+    guid_price = db.Column(db.VARCHAR(50))
+    price = db.Column(db.VARCHAR(50))
+    offset_price = db.Column(db.Integer())
+    location = db.Column(db.VARCHAR(50))
+    is_show = db.Column(db.Boolean())
+    remark = db.Column(db.VARCHAR(500))
+
+    brand = db.relationship("Brand")
+    cat = db.relationship("Category")
+    bcar = db.relationship("BasicCar")
+
+    def to_json(self):
+        json_user = {
+            'id': self.id,
+            'title': self.full_name,
+            'user_id': self.user_id,
+            'user_name': self.user_name,
+            'guid_price': self.guid_price,
+            'offset_price':self.offset_price,
+            'price': self.price,
+            'location': self.location,
+            'is_show': self.is_show,
+            'remark': self.remark,
+            'img_url': '%s/%s' % (current_app.config['IMG_PATH'],self.cat.img_url)
+            #'mp_count': self.subscribed_mps.count()
+        }
+        return json_user
+
+    def __repr__(self):
+        return "<%s>" % self.full_name
+
+
+class BasicCar(db.Model):
+    __tablename__ = 'basic_cars'
+    id = db.Column(db.Integer(), primary_key=True)
+    brand_id = db.Column(db.Integer, db.ForeignKey('car_brands.id'))
+    cat_id = db.Column(db.Integer, db.ForeignKey('car_categorys.id'))
 
     full_name = db.Column(db.VARCHAR(255))
     guid_price = db.Column(db.VARCHAR(50))
@@ -149,5 +191,4 @@ class Car(db.Model):
 
     def __repr__(self):
         return "<%s>" % self.full_name
-
 

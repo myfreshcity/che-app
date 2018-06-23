@@ -6,13 +6,15 @@ from flask import Flask, url_for, render_template, request, abort, jsonify, curr
 from flask_admin import helpers as admin_helpers
 from flask_babelex import Babel
 from flask_security import Security, SQLAlchemyUserDatastore, \
-    current_user, logout_user, login_user
+    current_user, logout_user, login_user, LoginForm
 # Create Flask application
+from flask_security.forms import password_required, Required
 from flask_security.utils import verify_password, hash_password
+from wtforms import StringField, PasswordField
 
 from config import config
 from webapp import db
-from webapp.model_views import MyModelViewUser, MyModelViewCar, MyModelViewOrder
+from webapp.model_views import MyModelViewUser, MyModelViewCar, MyModelViewOrder, MyView, MyModelViewBasicCar
 from webapp.services import get_brands, get_car_detail, get_index, get_openid, create_order
 from webapp.wxpay import get_nonce_str, WxPay, xml_to_dict, dict_to_xml
 
@@ -24,13 +26,19 @@ db.init_app(app)
 babel = Babel(app)
 app.config['BABEL_DEFAULT_LOCALE'] = 'zh_CN'
 
-from webapp.models import Role, User, Car, Order
+from webapp.models import Role, User, Car, Order, BasicCar
 
 # Define models
 
 # Setup Flask-Security
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
-security = Security(app, user_datastore)
+class ExtendedLoginForm(LoginForm):
+    email = StringField('用户名',
+                        validators=[Required(message='EMAIL_NOT_PROVIDED')])
+    password = PasswordField('密码',
+                             validators=[password_required])
+
+security = Security(app, user_datastore,login_form=ExtendedLoginForm)
 
 
 # Create customized model view class
@@ -48,8 +56,11 @@ admin = flask_admin.Admin(
 admin.add_view(MyModelViewUser(User, db.session, name=u'用户'))
 #admin.add_view(MyModelViewBrand(Brand, db.session,name=u'品牌', category=u'车辆'))
 #admin.add_view(MyModelView(Category, db.session,name=u'车系', category=u'车辆'))
-admin.add_view(MyModelViewCar(Car, db.session, name=u'车型'))
+admin.add_view(MyModelViewBasicCar(BasicCar, db.session, name=u'基础车型'))
+admin.add_view(MyModelViewCar(Car, db.session, name=u'我的车型'))
 admin.add_view(MyModelViewOrder(Order, db.session, name=u'订单'))
+
+#admin.add_view(MyView(name='Hello'))
 
 # define a context processor for merging flask-admin's template context into the
 # flask-security views.
